@@ -1,31 +1,32 @@
-/* styles.css */
-
-/* Make sure the html and body take up full viewport */
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
-/* Full page container */
 .full-page {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #121212; /* Dark background */
-  color: #e0e0e0;           /* Light text for readability */
+  background-color: #121212;
+  color: #e0e0e0;
   font-family: Arial, Helvetica, sans-serif;
   line-height: 1.6;
 }
 
-/* Headings */
-h1, h2, h3, h4, h5, h6 {
-  color: #ffffff; /* Make headings slightly brighter */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #ffffff;
 }
 
-/* Links */
 a {
-  color: #1e90ff; /* Readable blue for links */
+  color: #1e90ff;
   text-decoration: none;
 }
 
@@ -33,7 +34,6 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Buttons */
 button {
   background-color: #1e1e1e;
   color: #e0e0e0;
@@ -47,8 +47,8 @@ button:hover {
   background-color: #333;
 }
 
-/* Inputs */
-input, textarea {
+input,
+textarea {
   background-color: #1e1e1e;
   color: #e0e0e0;
   border: 1px solid #333;
@@ -56,6 +56,18 @@ input, textarea {
   border-radius: 4px;
 }
 
-input::placeholder, textarea::placeholder {
+span:hover {
+  cursor: pointer;
+  color: blue;
+  text-decoration: underline;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+input::placeholder,
+textarea::placeholder {
   color: #aaa;
 }

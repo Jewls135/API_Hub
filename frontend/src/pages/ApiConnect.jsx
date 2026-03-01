@@ -1,3 +1,4 @@
+import JsonTree from "../components/JsonTree";
 import { useState } from "react";
 import axios from "axios";
 import "./styles.css";
@@ -7,6 +8,7 @@ export default function ApiConnect() {
   const [method, setMethod] = useState("GET");
   const [headers, setHeaders] = useState("{}");
   const [data, setData] = useState(null);
+  const [mappedFields, setMappedFields] = useState([]);
   const [error, setError] = useState(null);
 
   const handleSubmit = async () => {
@@ -22,6 +24,12 @@ export default function ApiConnect() {
     } catch (err) {
       setError(err.message);
       setData(null);
+    }
+  };
+
+  const handleSelectField = (path) => {
+    if (!mappedFields.includes(path)) {
+      setMappedFields(prev => [...prev, path]);
     }
   };
 
@@ -46,7 +54,24 @@ export default function ApiConnect() {
       <button onClick={handleSubmit}>Test API</button>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
-      {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
+
+      {data && (
+        <div>
+          <h2>API Response</h2>
+          <JsonTree data={data} onSelect={handleSelectField} />
+        </div>
+      )}
+
+      {mappedFields.length > 0 && (
+        <div>
+          <h2>Mapped Fields</h2>
+          <ul>
+            {mappedFields.map(field => (
+              <li key={field}>{field}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
