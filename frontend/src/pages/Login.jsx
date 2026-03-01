@@ -1,6 +1,7 @@
 import { auth } from "../services/firebase";
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
+import "./styles.css";
 
 export default function Login() {
   const [user, loading, error] = useAuthState(auth); // hook automatically listens to auth state

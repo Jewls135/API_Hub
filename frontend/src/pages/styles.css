@@ -1,0 +1,61 @@
+/* styles.css */
+
+/* Make sure the html and body take up full viewport */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Full page container */
+.full-page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #121212; /* Dark background */
+  color: #e0e0e0;           /* Light text for readability */
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: #ffffff; /* Make headings slightly brighter */
+}
+
+/* Links */
+a {
+  color: #1e90ff; /* Readable blue for links */
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Buttons */
+button {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  padding: 0.5em 1em;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #333;
+}
+
+/* Inputs */
+input, textarea {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  padding: 0.5em;
+  border-radius: 4px;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #aaa;
+}
