@@ -28,18 +28,37 @@ export default function Login() {
 
   if (!user) {
     return (
-      <div>
-        <h1>Sign in</h1>
-        <button onClick={login}>Sign in with Google</button>
+      <div className="full-page">
+        <div className="login-container">
+          <div className="login-box">
+            <h1 className="accent-gold">Sign In</h1>
+            <button className="btn btn-gold" onClick={login}>
+              Sign in with Google
+            </button>
+          </div>
+        </div>
       </div>
     );
   } else {
     return (
-      <div>
-        <h1>Welcome, {user.displayName}</h1>
-        <p>Email: {user.email}</p>
-        <img src={user.photoURL} alt="avatar" />
-        <button onClick={logout}>Sign Out</button>
+      <div className="full-page">
+        <div className="login-container">
+          <div className="login-box">
+            <h1 className="accent-gold">Welcome</h1>
+            <p className="help accent-gold">{user.displayName}</p>
+            <p className="help">{user.email}</p>
+            {user.photoURL && (
+              <img
+                src={user.photoURL}
+                alt="avatar"
+                style={{ borderRadius: "50%", marginTop: "0.75rem" }}
+              />
+            )}
+            <button className="btn btn-danger" style={{ marginTop: "1rem", width: "100%" }} onClick={logout}>
+              Sign Out
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
