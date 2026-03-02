@@ -8,11 +8,12 @@ A full-stack SaaS developed web application that allows users to connect externa
 
 Usage:
 
-- Connect any REST API
-- See and interact with API responses
+- Connect any API
+- See and interact with API responses (only .json format support for now)
 - Query / sort by specific data fields
 - Visualize API responses via graphs / dashboards
-- Automate emails/texts/ other flags based on data recieved
+- Automate data collection on responses
+- Set flags based on API responses including emails / text notifications
 
 Example Use Cases:
 
@@ -24,20 +25,20 @@ Example Use Cases:
 
 ## Tech Stack Utilized
 
-### Frontend
+### Frontend - Implemented
 - React
 - Vite
 - Axios
 
-### Backend
+### Backend - Implemented
 - Node.js
 - Express.js
 - REST API's for testing purposes
 
-### Database (Planned)
+### Database - Implemented
 - MongoDB Atlas
 
-### Authentication (Planned)
+### Authentication - Implemented
 - Firebase Authentication 
 
 ### Deployment (Planned)
