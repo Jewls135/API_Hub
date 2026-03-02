@@ -3,25 +3,29 @@ import React from "react";
 export default function JsonTree({ data, onSelect, path = "" }) {
 
   if (typeof data !== "object" || data === null) {
-    // Base case: primitive value
+    const label = path.split(".").slice(-1)[0];
     return (
-      <div style={{ paddingLeft: "20px" }}>
-        <span onClick={() => onSelect(path)}>
-          {path.split(".").slice(-1)[0]}: {String(data)}
-        </span>
+      <div className="json-item">
+        <span className="json-key" onClick={() => onSelect(path)}>{label}</span>
+        <span className="json-value">: {String(data)}</span>
       </div>
     );
   }
 
   return (
-    <div style={{ paddingLeft: "10px" }}>
+    <div>
       {Object.entries(data).map(([key, value]) => (
-        <JsonTree
-          key={key}
-          data={value}
-          path={path ? `${path}.${key}` : key}
-          onSelect={onSelect}
-        />
+        <div className="json-item" key={key}>
+          <div>
+            <span className="json-key" onClick={() => onSelect(path ? `${path}.${key}` : key)}>{key}</span>
+            {typeof value !== 'object' || value === null ? (
+              <span className="json-value">: {String(value)}</span>
+            ) : null}
+          </div>
+          {typeof value === 'object' && value !== null ? (
+            <JsonTree data={value} path={path ? `${path}.${key}` : key} onSelect={onSelect} />
+          ) : null}
+        </div>
       ))}
     </div>
   );
