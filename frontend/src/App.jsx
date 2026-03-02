@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
-import TestBackend from "./pages/TestBackend";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ApiConnect from "./pages/ApiConnect";
 import "./App.css";
@@ -33,7 +33,7 @@ function App() {
       {/* Content container */}
       <main className="content">
         <Routes>
-          <Route path="/" element={<TestBackend />} />
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/connect-api" element={<ApiConnect />} />
         </Routes>
