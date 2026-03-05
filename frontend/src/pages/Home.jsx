@@ -8,7 +8,7 @@ export default function Home() {
         <div className="console">
           {/* header */}
           <div className="console-header">
-            <span className="console-title">API Hub — Documentation</span>
+            <span className="console-title">API Hub - Documentation</span>
           </div>
 
           {/* main content */}
@@ -37,14 +37,15 @@ export default function Home() {
                     external APIs, sending requests, and visualizing returned
                     data in a structured and readable format. Developers can
                     quickly inspect responses, understand complex JSON
-                    structures, and record and map important data fields without needing
-                    multiple external tools.
+                    structures, and record and map important data fields without
+                    needing multiple external tools.
                   </p>
 
                   <p>
                     Future updates will include additions to the dashboard
-                    interface regarding automation, algorithms behind data parsing,
-                    and improvements to the visualization/interaction with mapped data
+                    interface regarding automation, algorithms behind data
+                    parsing, and improvements to the visualization/interaction
+                    with mapped data
                   </p>
                 </div>
               </div>
@@ -85,18 +86,15 @@ export default function Home() {
                   href="https://github.com/Jewls135/API_Hub"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mapped-item"
                 >
-                  View API Hub on GitHub
+                  &gt; View API Hub on GitHub
                 </a>
-              </div>
 
-              {/* AUTHOR */}
-              <div className="section">
                 <div
                   style={{
                     textAlign: "center",
                     opacity: 0.7,
+                    paddingTop: "1rem",
                   }}
                 >
                   Built by <strong>Julian Ward</strong>
