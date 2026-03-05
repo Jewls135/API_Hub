@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const ApiConnectionSchema = new mongoose.Schema({
-  userId: { type: String, required: true }, // Firebase UID
+  userId: { type: String, required: true }, 
   name: { type: String, required: true },
   url: { type: String, required: true },
   method: { type: String, default: "GET" },
@@ -10,7 +10,7 @@ const ApiConnectionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-// Ensure each user cannot have duplicate entries for the same URL
+
 ApiConnectionSchema.index({ userId: 1, url: 1 }, { unique: true });
 
 export default mongoose.model("ApiConnection", ApiConnectionSchema);

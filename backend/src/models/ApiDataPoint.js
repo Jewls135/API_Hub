@@ -6,38 +6,44 @@ const ApiDataPointSchema = new mongoose.Schema({
     ref: "ApiConnection",
     required: true,
   },
-  userId: { type: String, required: true }, // Firebase UID for quick filtering
-  values: { type: Object, required: true }, // actual data/response from API
-  mappedFieldValues: { type: Object, default: {} }, // extracted values from mappedFields (e.g., { "data.users[0].id": "123" })
+  userId: { type: String, required: true },
+  values: { type: Object, required: true },
+  mappedFieldValues: { type: Object, default: {} }, 
   timestamp: { type: Date, default: Date.now },
 });
 
-// Index for quick filtering by userId and apiConnectionId
 ApiDataPointSchema.index({ userId: 1, apiConnectionId: 1, timestamp: -1 });
 
-// Normalize paths by converting array indices to [*]
-// Handles both bracket notation (users[0].name) and dot notation (users.0.name or 0.userId)
-// e.g., "users[0].name" → "users[*].name", "0.userId" → "[*].userId", "users.0.id" → "users[*].id"
+/**
+ * Normalize mapped-field paths so array index variants share one key format.
+ *
+ * Examples:
+ * - users[0].name -> users[*].name
+ * - users.0.name -> users[*].name
+ * - 0.userId -> [*].userId
+ */
 ApiDataPointSchema.statics.normalizePath = function (path) {
-  // Replace bracket notation [N] with [*]
+  // Convert bracket notation indexes.
   let normalized = path.replace(/\[\d+\]/g, "[*]");
 
-  // For dot notation with leading numbers (e.g., "0.userId" → "[*].userId")
+  // Convert leading numeric segments.
   if (/^\d+\./.test(normalized)) {
     normalized = `[*].${normalized.replace(/^\d+\./, "")}`;
   }
 
-  // Replace numeric segment between dots with [*] (e.g., "users.0.name" → "users[*].name")
+  // Convert middle numeric segments.
   normalized = normalized.replace(/\.(\d+)\./g, "[*].");
 
-  // Handle trailing numeric segment (e.g., "users.0" → "users[*]")
+  // Convert trailing numeric segments.
   normalized = normalized.replace(/\.(\d+)$/g, "[*]");
 
   return normalized;
 };
 
-// Method to extract values from mappedFields paths
-// Will intelligently handles array patterns: users[0].name and users[1].name both extract as users[*].name, ****TODO: UPDATE ALGORITHMS LATER TO RESOLVE MORE COMPLEX RESPONSES
+/**
+ * Extract values using mapped-field paths from the current data point payload.
+ * Array path variants are grouped under a normalized key.
+ */
 ApiDataPointSchema.methods.extractMappedValues = function (mappedFields) {
   const extracted = {};
   const normalizedPaths = new Set();
@@ -46,21 +52,21 @@ ApiDataPointSchema.methods.extractMappedValues = function (mappedFields) {
     const normalizedPath =
       ApiDataPointSchema.statics.normalizePath(originalPath);
 
-    // Skip if we've already processed this normalized pattern
+    // Avoid duplicate extraction for equivalent array paths.
     if (normalizedPaths.has(normalizedPath)) {
       return;
     }
     normalizedPaths.add(normalizedPath);
 
     try {
-      // If the path contains [*], extract from ALL array elements
+      // Expand wildcard array segments.
       if (normalizedPath.includes("[*]")) {
         const values = this._extractAllArrayMatches(normalizedPath);
         if (values.length > 0) {
           extracted[normalizedPath] = values;
         }
       } else {
-        // Regular path extraction
+        // Resolve a non-wildcard object path.
         const keys = normalizedPath.split(".");
         let value = this.values;
 
@@ -90,7 +96,9 @@ ApiDataPointSchema.methods.extractMappedValues = function (mappedFields) {
   return extracted;
 };
 
-// Helper method to extract values matching a pattern with [*]
+/**
+ * Resolve wildcard patterns (for example: users[*].name) against payload data.
+ */
 ApiDataPointSchema.methods._extractAllArrayMatches = function (pattern) {
   const results = [];
   const parts = pattern.split(".");
@@ -100,7 +108,7 @@ ApiDataPointSchema.methods._extractAllArrayMatches = function (pattern) {
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
 
-      // Match patterns like "[*]", "key", or "key[*]"
+      // Match segments like [*], key, or key[*].
       const match = part.match(/^(\w*)(?:\[(\*|\d+)\])?$/);
 
       if (!match) continue;
@@ -108,7 +116,7 @@ ApiDataPointSchema.methods._extractAllArrayMatches = function (pattern) {
       const key = match[1];
       const bracketPart = match[2];
 
-      // Handle [*] at the start (root-level array)
+      // Handle root-level wildcard arrays.
       if (part === "[*]") {
         if (!Array.isArray(current)) {
           continue;
@@ -132,7 +140,7 @@ ApiDataPointSchema.methods._extractAllArrayMatches = function (pattern) {
         });
         break;
       } else if (bracketPart === "*") {
-        // Handle key[*]
+        // Handle nested wildcard arrays.
         if (!Array.isArray(current[key])) {
           continue;
         }
@@ -153,9 +161,9 @@ ApiDataPointSchema.methods._extractAllArrayMatches = function (pattern) {
             results.push(value);
           }
         });
-        break; // We've processed the array, exit loop
+        break;
       } else if (key) {
-        // Regular key navigation
+        // Continue traversal.
         current = current[key];
         if (current === undefined) break;
       }
