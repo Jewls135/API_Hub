@@ -28,6 +28,8 @@ export default function ApiConnect() {
   const [runningJobs, setRunningJobs] = useState([]);
   const [showModal, setShowModal] = useState(false);
 
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   /**
    * Redirects unauthenticated users to the login page.
    */
@@ -52,7 +54,7 @@ export default function ApiConnect() {
       const parsedHeaders = JSON.parse(headers || "{}");
 
       const res = await axios.post(
-        "http://localhost:5000/api/execute-api",
+        `${backendUrl}/api/execute-api`,
         {
           url,
           method,
@@ -88,7 +90,7 @@ export default function ApiConnect() {
       const parsedHeaders = JSON.parse(headers || "{}");
 
       const res = await axios.post(
-        "http://localhost:5000/api/execute-api",
+        `${backendUrl}/api/execute-api`,
         {
           url,
           method,
@@ -171,7 +173,7 @@ export default function ApiConnect() {
     try {
       const token = await auth.currentUser.getIdToken();
       const res = await axios.post(
-        "http://localhost:5000/api/save-api",
+        `${backendUrl}/api/save-api`,
         {
           name: apiName.trim(),
           url,
@@ -198,7 +200,7 @@ export default function ApiConnect() {
 
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await axios.get("http://localhost:5000/api/user-apis", {
+      const res = await axios.get(`${backendUrl}/api/user-apis`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const found = (res.data || []).find((a) => a._id === apiId);
@@ -223,7 +225,7 @@ export default function ApiConnect() {
           try {
             const token2 = await auth.currentUser.getIdToken();
             const dataRes = await axios.get(
-              `http://localhost:5000/api/api/${found._id}/unique-data`,
+              `${backendUrl}/api/api/${found._id}/unique-data`,
               { headers: { Authorization: `Bearer ${token2}` } },
             );
             const saved = dataRes.data || [];
@@ -252,7 +254,7 @@ export default function ApiConnect() {
   const fetchSavedApis = async () => {
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await axios.get("http://localhost:5000/api/user-apis", {
+      const res = await axios.get(`${backendUrl}/api/user-apis`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSavedApis(res.data || []);
@@ -267,7 +269,7 @@ export default function ApiConnect() {
   const fetchRunningJobs = async () => {
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await axios.get("http://localhost:5000/api/automation", {
+      const res = await axios.get(`${backendUrl}/api/automation`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRunningJobs(res.data?.jobs || []);
@@ -293,7 +295,7 @@ export default function ApiConnect() {
     try {
       const token = await auth.currentUser.getIdToken();
       const res = await axios.get(
-        `http://localhost:5000/api/api/${currentApiId}/unique-data`,
+        `${backendUrl}/api/api/${currentApiId}/unique-data`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
@@ -355,7 +357,7 @@ export default function ApiConnect() {
     try {
       const token = await auth.currentUser.getIdToken();
       const res = await axios.get(
-        `http://localhost:5000/api/api/${currentApiId}/unique-data`,
+        `${backendUrl}/api/api/${currentApiId}/unique-data`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
@@ -383,7 +385,7 @@ export default function ApiConnect() {
       const parsedHeaders = JSON.parse(headers || "{}");
 
       await axios.post(
-        "http://localhost:5000/api/automation",
+        `${backendUrl}/api/automation`,
         {
           apiConnectionId: currentApiId,
           url,
@@ -419,7 +421,7 @@ export default function ApiConnect() {
       }
 
       await axios.post(
-        `http://localhost:5000/api/automation/${currentJob._id}/stop`,
+        `${backendUrl}/api/automation/${currentJob._id}/stop`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -456,7 +458,7 @@ export default function ApiConnect() {
     try {
       const token = await auth.currentUser.getIdToken();
       const res = await axios.get(
-        `http://localhost:5000/api/api/${currentApiId}/unique-data`,
+        `${backendUrl}/api/api/${currentApiId}/unique-data`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
 

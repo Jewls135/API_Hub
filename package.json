@@ -1,0 +1,11 @@
+{
+  "name": "api-hub-jewls135",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "backend"
+  ],
+  "scripts": {
+    "start": "npm --workspace backend start"
+  }
+}
