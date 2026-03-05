@@ -1,6 +1,7 @@
 import JsonTree from "../components/JsonTree";
 import TrendGraph from "../components/TrendGraph";
 import FieldValuesModal from "../components/FieldValuesModal";
+import AutomationModal from "../components/AutomationModal";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { auth } from "../services/firebase";
@@ -24,8 +25,12 @@ export default function ApiConnect() {
   const [modalField, setModalField] = useState(null);
   const [modalData, setModalData] = useState(null);
   const [savedApis, setSavedApis] = useState([]);
+  const [runningJobs, setRunningJobs] = useState([]);
+  const [showModal, setShowModal] = useState(false);
 
-  // Check if user is logged in, if not redirect
+  /**
+   * Redirects unauthenticated users to the login page.
+   */
   const checkIfLoggedIn = () => {
     const user = auth.currentUser;
     if (!user) {
@@ -38,23 +43,25 @@ export default function ApiConnect() {
     checkIfLoggedIn();
   }, []);
 
-  // Test API call
+  /**
+   * Sends a one-time API request without persisting the response.
+   */
   const handleSubmit = async () => {
     try {
       const token = await auth.currentUser.getIdToken();
       const parsedHeaders = JSON.parse(headers || "{}");
 
       const res = await axios.post(
-        "http://localhost:5000/api/test-api",
-        { 
-          url, 
-          method, 
+        "http://localhost:5000/api/execute-api",
+        {
+          url,
+          method,
           headers: parsedHeaders,
           apiConnectionId: currentApiId,
           mappedFields: mappedFields,
           saveData: false,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       setData(res.data?.data || res.data);
@@ -67,7 +74,9 @@ export default function ApiConnect() {
     }
   };
 
-  // Save current data from mapped fields
+  /**
+   * Persists the current response payload for the selected saved API.
+   */
   const handleSaveData = async () => {
     if (!currentApiId || !data) {
       alert("Please test an API first and load a configuration");
@@ -79,57 +88,67 @@ export default function ApiConnect() {
       const parsedHeaders = JSON.parse(headers || "{}");
 
       const res = await axios.post(
-        "http://localhost:5000/api/test-api",
-        { 
-          url, 
-          method, 
+        "http://localhost:5000/api/execute-api",
+        {
+          url,
+          method,
           headers: parsedHeaders,
           apiConnectionId: currentApiId,
           mappedFields: mappedFields,
           saveData: true,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      if (res.data?.isDuplicate) {
-        setLastSaveStatus("Duplicate data detected — not saved");
-      } else if (res.data?.savedDataPoint) {
+      if (res.data?.savedDataPoint) {
         setLastSaveStatus("✓ Data saved successfully!");
       } else {
         setLastSaveStatus("✓ Data saved!");
       }
+
+      handlePlotGraph();
     } catch (err) {
       alert("Error saving data: " + (err.response?.data?.error || err.message));
     }
   };
 
-  // Normalize paths - convert array indices to [*] pattern
-  // Handles both 0.userId (dot notation) and [0].userId (bracket notation)
+  /**
+   * Normalizes selected JSON paths so array index variations map to one key.
+   *
+   * Examples:
+   * - 0.userId -> [*].userId
+   * - users.0.name -> users[*].name
+   * - users[0].name -> users[*].name
+   */
   const normalizePath = (path) => {
     let normalized = path.replace(/\[\d+\]/g, "[*]");
-    
-    // Leading numbers: "0.userId" → "[*].userId"
+
+    // Convert leading numeric segments.
     if (/^\d+\./.test(normalized)) {
       normalized = `[*].${normalized.replace(/^\d+\./, "")}`;
     }
-    
-    // Middle/trailing: "users.0.name" → "users[*].name" or "users.0" → "users[*]"
+
+    // Convert middle and trailing numeric segments.
     normalized = normalized.replace(/\.(\d+)\./g, "[*].");
     normalized = normalized.replace(/\.(\d+)$/g, "[*]");
-    
+
     return normalized;
   };
 
-  // Map JSON fields
+  /**
+   * Adds a selected JSON path to the mapped field list if not already present.
+   */
   const handleSelectField = (path) => {
     const normalizedPath = normalizePath(path);
-    
+
     if (!mappedFields.includes(normalizedPath)) {
       setMappedFields((prev) => [...prev, normalizedPath]);
     }
   };
 
-  // Save API configuration (URL + field mappings)
+  /**
+   * Saves or updates the current API configuration.
+   */
   const saveApi = async () => {
     if (!url) {
       alert("Please enter a URL first");
@@ -141,9 +160,11 @@ export default function ApiConnect() {
       return;
     }
 
-    // Check 5 API limit (only if creating new)
+    // Enforce max saved APIs only for new records.
     if (!currentApiId && savedApis.length >= 5) {
-      alert("You can save a maximum of 5 APIs. Please delete an existing one first.");
+      alert(
+        "You can save a maximum of 5 APIs. Please delete an existing one first.",
+      );
       return;
     }
 
@@ -158,7 +179,7 @@ export default function ApiConnect() {
           headers: JSON.parse(headers || "{}"),
           mappedFields,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setCurrentApiId(res.data._id);
       setLastSaveStatus("✓ API saved: " + apiName);
@@ -169,63 +190,19 @@ export default function ApiConnect() {
     }
   };
 
-  // Load saved API settings for current URL
-  const loadApi = async () => {
-    try {
-      const token = await auth.currentUser.getIdToken();
-      const res = await axios.get("http://localhost:5000/api/user-apis", { headers: { Authorization: `Bearer ${token}` } });
-      const found = (res.data || []).find(a => String(a.url).trim() === String(url).trim());
-      if (found) {
-        setCurrentApiId(found._id);
-        setApiName(found.name || "");
-        setMethod(found.method || "GET");
-        setHeaders(JSON.stringify(found.headers || {}));
-        setMappedFields(found.mappedFields || []);
-        setData(null);
-        setError(null);
-        setLastSaveStatus("✓ API settings loaded!");
-
-        // automatically choose first mapped field and load its data
-        const firstField = (found.mappedFields && found.mappedFields[0]) || "";
-        setSelectedField(firstField);
-        setSelectedField2("");
-
-        if (firstField) {
-          try {
-            const token2 = await auth.currentUser.getIdToken();
-            const dataRes = await axios.get(
-              `http://localhost:5000/api/api/${found._id}/unique-data`,
-              { headers: { Authorization: `Bearer ${token2}` } }
-            );
-            const saved = dataRes.data || [];
-            setGraphData(saved);
-            if (saved.length > 0) {
-              setData(saved[0].values || saved[0].mappedFieldValues || saved[0]);
-            }
-          } catch (err2) {
-            console.error("Error loading saved data for graph:", err2);
-          }
-        } else {
-          setGraphData([]);
-        }
-      } else {
-        alert("No saved API found for this URL");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error loading saved APIs");
-    }
-  };
-
-  // Load API by ID from dropdown
+  /**
+   * Loads a saved API config into the form and preloads trend data.
+   */
   const loadApiById = async (apiId) => {
     if (!apiId) return;
-    
+
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await axios.get("http://localhost:5000/api/user-apis", { headers: { Authorization: `Bearer ${token}` } });
-      const found = (res.data || []).find(a => a._id === apiId);
-      
+      const res = await axios.get("http://localhost:5000/api/user-apis", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const found = (res.data || []).find((a) => a._id === apiId);
+
       if (found) {
         setUrl(found.url);
         setCurrentApiId(found._id);
@@ -237,7 +214,7 @@ export default function ApiConnect() {
         setError(null);
         setLastSaveStatus("✓ API loaded!");
 
-        // auto-select first mapped field and load its saved data
+        // Prefill graph inputs using the first available mapped field.
         const firstField = (found.mappedFields && found.mappedFields[0]) || "";
         setSelectedField(firstField);
         setSelectedField2("");
@@ -247,12 +224,14 @@ export default function ApiConnect() {
             const token2 = await auth.currentUser.getIdToken();
             const dataRes = await axios.get(
               `http://localhost:5000/api/api/${found._id}/unique-data`,
-              { headers: { Authorization: `Bearer ${token2}` } }
+              { headers: { Authorization: `Bearer ${token2}` } },
             );
             const saved = dataRes.data || [];
             setGraphData(saved);
             if (saved.length > 0) {
-              setData(saved[0].values || saved[0].mappedFieldValues || saved[0]);
+              setData(
+                saved[0].values || saved[0].mappedFieldValues || saved[0],
+              );
             }
           } catch (err2) {
             console.error("Error loading saved data for graph:", err2);
@@ -267,18 +246,47 @@ export default function ApiConnect() {
     }
   };
 
-  // Fetch all saved APIs
+  /**
+   * Fetches all saved API configurations for the current user.
+   */
   const fetchSavedApis = async () => {
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await axios.get("http://localhost:5000/api/user-apis", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get("http://localhost:5000/api/user-apis", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setSavedApis(res.data || []);
     } catch (err) {
       console.error("Error fetching saved APIs:", err);
     }
   };
 
-  // Detect data types of fields from saved data
+  /**
+   * Fetches active automation jobs for the current user.
+   */
+  const fetchRunningJobs = async () => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const res = await axios.get("http://localhost:5000/api/automation", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRunningJobs(res.data?.jobs || []);
+    } catch (err) {
+      console.error("Error fetching running jobs:", err);
+      setRunningJobs([]);
+    }
+  };
+
+  const formatLastRun = (lastRun) => {
+    if (!lastRun) return "Never";
+    const parsedDate = new Date(lastRun);
+    if (Number.isNaN(parsedDate.getTime())) return "Never";
+    return parsedDate.toLocaleString();
+  };
+
+  /**
+   * Detects mapped field data types from the latest saved payload.
+   */
   const detectFieldTypes = async () => {
     if (!currentApiId) return;
 
@@ -286,21 +294,23 @@ export default function ApiConnect() {
       const token = await auth.currentUser.getIdToken();
       const res = await axios.get(
         `http://localhost:5000/api/api/${currentApiId}/unique-data`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       const types = {};
       const sampleData = res.data && res.data[0];
 
       if (sampleData && sampleData.mappedFieldValues) {
-        Object.entries(sampleData.mappedFieldValues).forEach(([field, value]) => {
-          if (Array.isArray(value)) {
-            // For arrays, check the type of first element
-            types[field] = value.length > 0 ? typeof value[0] : "unknown";
-          } else {
-            types[field] = typeof value;
-          }
-        });
+        Object.entries(sampleData.mappedFieldValues).forEach(
+          ([field, value]) => {
+            if (Array.isArray(value)) {
+              // Infer type from the first array entry when possible.
+              types[field] = value.length > 0 ? typeof value[0] : "unknown";
+            } else {
+              types[field] = typeof value;
+            }
+          },
+        );
       }
 
       setFieldTypes(types);
@@ -309,24 +319,33 @@ export default function ApiConnect() {
     }
   };
 
-  // Call detectFieldTypes when currentApiId changes
+  /**
+   * Refreshes detected field types whenever the selected API changes.
+   */
   useEffect(() => {
     detectFieldTypes();
   }, [currentApiId]);
 
-  // Fetch saved APIs on component mount
+  /**
+   * Loads initial API and automation state on mount.
+   */
   useEffect(() => {
     fetchSavedApis();
+    fetchRunningJobs();
   }, []);
 
-  // Auto-clear field2 if it matches field1
+  /**
+   * Prevents selecting the same mapped field in both comparison slots.
+   */
   useEffect(() => {
     if (selectedField2 === selectedField && selectedField) {
       setSelectedField2("");
     }
   }, [selectedField]);
 
-  // Fetch and plot saved data
+  /**
+   * Loads saved data points used by the trend chart.
+   */
   const handlePlotGraph = async () => {
     if (!currentApiId || !selectedField) {
       alert("Please load an API and select at least one field");
@@ -337,7 +356,7 @@ export default function ApiConnect() {
       const token = await auth.currentUser.getIdToken();
       const res = await axios.get(
         `http://localhost:5000/api/api/${currentApiId}/unique-data`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       setGraphData(res.data || []);
@@ -347,11 +366,90 @@ export default function ApiConnect() {
     }
   };
 
-  // Get all mapped fields for trend graphs
-  // This allows users to save any field's value over time
+  /**
+   * Opens the automation menu for the selected API.
+   */
+  const automateApi = async () => {
+    if (!currentApiId) return;
+    setShowModal(true);
+  };
+
+  /**
+   * Creates or updates automation with the chosen interval.
+   */
+  const handleConfirmInterval = async (intervalMs) => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const parsedHeaders = JSON.parse(headers || "{}");
+
+      await axios.post(
+        "http://localhost:5000/api/automation",
+        {
+          apiConnectionId: currentApiId,
+          url,
+          method,
+          headers: parsedHeaders,
+          mappedFields,
+          intervalMs,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      setError(null);
+      await fetchRunningJobs();
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+      throw err;
+    }
+  };
+
+  /**
+   * Stops the active automation job for the selected API.
+   */
+  const handleStopAutomation = async () => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const currentApi = savedApis.find((api) => api._id === currentApiId);
+      const currentJob = currentApi ? runningJobsByUrl[currentApi.url] : null;
+
+      if (!currentJob?._id) {
+        return;
+      }
+
+      await axios.post(
+        `http://localhost:5000/api/automation/${currentJob._id}/stop`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      setError(null);
+      await fetchRunningJobs();
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+      throw err;
+    }
+  };
+
+  const runningJobsByUrl = runningJobs.reduce((acc, job) => {
+    acc[job.url] = job;
+    return acc;
+  }, {});
+
+  const currentApi = savedApis.find((api) => api._id === currentApiId);
+  const currentApiJob = currentApi ? runningJobsByUrl[currentApi.url] : null;
+
+  /**
+   * Source fields displayed in trend chart selectors.
+   */
   const allMappedFields = mappedFields;
 
-  // Handle field click to show model
+  /**
+   * Opens the field-values modal for a mapped field.
+   */
   const handleFieldClick = async (field) => {
     if (!currentApiId) return;
 
@@ -359,9 +457,9 @@ export default function ApiConnect() {
       const token = await auth.currentUser.getIdToken();
       const res = await axios.get(
         `http://localhost:5000/api/api/${currentApiId}/unique-data`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-      
+
       setModalField(field);
       setModalData(res.data || []);
     } catch (err) {
@@ -382,8 +480,16 @@ export default function ApiConnect() {
           <div className="console-body">
             <div className="panel">
               {currentApiId && (
-                <div style={{ padding: "0.5rem", backgroundColor: "#0a5f0a", borderRadius: "0.25rem", marginBottom: "0.5rem", fontSize: "0.85rem" }}>
-                  ✓ API Config Loaded — Data saving enabled
+                <div
+                  style={{
+                    padding: "0.5rem",
+                    backgroundColor: "#0a5f0a",
+                    borderRadius: "0.25rem",
+                    marginBottom: "0.5rem",
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  ✓ API Config Loaded - Data saving enabled
                 </div>
               )}
 
@@ -416,6 +522,32 @@ export default function ApiConnect() {
                 </select>
               </div>
 
+              {savedApis.length > 0 && (
+                <div className="running-jobs-panel">
+                  <div className="help" style={{ marginBottom: "0.4rem" }}>
+                    Running Jobs
+                  </div>
+                  {savedApis.map((api) => {
+                    const job = runningJobsByUrl[api.url];
+                    return (
+                      <div key={`job-${api._id}`} className="running-job-row">
+                        <div className="running-job-name" title={api.name}>
+                          {api.name}
+                        </div>
+                        <div
+                          className={`running-job-status ${job ? "running" : "stopped"}`}
+                        >
+                          {job ? "Running" : "Not running"}
+                        </div>
+                        <div className="running-job-last-run">
+                          Last ran: {formatLastRun(job?.lastRun)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               <div className="form-row">
                 <div className="form-label">API Name</div>
                 <input
@@ -440,11 +572,7 @@ export default function ApiConnect() {
 
               <div className="form-row">
                 <div className="form-label">Method</div>
-                <select
-                  className="select"
-                  value={method}
-                  disabled
-                >
+                <select className="select" value={method} disabled>
                   <option>GET</option>
                 </select>
               </div>
@@ -460,27 +588,57 @@ export default function ApiConnect() {
               </div>
 
               <div className="form-row toolbar" style={{ marginBottom: "0" }}>
-                <button className="btn btn-success" onClick={handleSubmit} title="Send request to the specified URL and show response">
+                <button
+                  className="btn btn-success"
+                  onClick={handleSubmit}
+                  title="Send request to the specified URL and show response"
+                >
                   Send Request
                 </button>
-                <button className="btn btn-primary" onClick={loadApi} title="Load a saved API configuration based on the URL">
-                  Load Config
+                <button
+                  className="btn btn-success"
+                  onClick={automateApi}
+                  title="Open automation options for this API (start/update/stop)"
+                >
+                  Automation Menu
                 </button>
-                <button className="btn btn-danger" onClick={() => { setHeaders("{}"); setUrl(""); setMappedFields([]); setData(null); setError(null); setLastSaveStatus(null); setCurrentApiId(null); setApiName(""); }}>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => {
+                    setHeaders("{}");
+                    setUrl("");
+                    setMappedFields([]);
+                    setData(null);
+                    setError(null);
+                    setLastSaveStatus(null);
+                    setCurrentApiId(null);
+                    setApiName("");
+                  }}
+                >
                   Reset
                 </button>
-                <div style={{ flex: 1 }} />
-                <button className="btn btn-info" onClick={handleSaveData} title="Store the current response data based on mapped fields">
+                <button
+                  className="btn btn-info"
+                  onClick={handleSaveData}
+                  title="Store the current response data based on mapped fields"
+                >
                   Save Response Data
                 </button>
-                <button 
-                  className="btn btn-gold" 
+                <button
+                  className="btn btn-gold"
                   onClick={saveApi}
                   disabled={!currentApiId && savedApis.length >= 5}
-                  title={!currentApiId && savedApis.length >= 5 ? "Maximum 5 APIs reached. Delete one to add another." : "Save or update the API configuration (URL + mapping)"}
+                  title={
+                    !currentApiId && savedApis.length >= 5
+                      ? "Maximum 5 APIs reached. Delete one to add another."
+                      : "Save or update the API configuration (URL + mapping)"
+                  }
                   style={{
-                    opacity: (!currentApiId && savedApis.length >= 5) ? 0.5 : 1,
-                    cursor: (!currentApiId && savedApis.length >= 5) ? "not-allowed" : "pointer"
+                    opacity: !currentApiId && savedApis.length >= 5 ? 0.5 : 1,
+                    cursor:
+                      !currentApiId && savedApis.length >= 5
+                        ? "not-allowed"
+                        : "pointer",
                   }}
                 >
                   Save Configuration
@@ -488,15 +646,27 @@ export default function ApiConnect() {
               </div>
 
               {error && <div className="error">{error}</div>}
-              {lastSaveStatus && <div style={{ color: "#a8d5a8", fontSize: "0.9rem", marginTop: "0.5rem" }}>{lastSaveStatus}</div>}
+              {lastSaveStatus && (
+                <div
+                  style={{
+                    color: "#a8d5a8",
+                    fontSize: "0.9rem",
+                    marginTop: "0.5rem",
+                  }}
+                >
+                  {lastSaveStatus}
+                </div>
+              )}
 
               {mappedFields.length > 0 && (
                 <div style={{ marginTop: "0.5rem" }}>
-                  <div className="help accent-gold">Mapped Fields (click to view)</div>
+                  <div className="help accent-gold">
+                    Mapped Fields (click to view)
+                  </div>
                   <div className="mapped-list">
                     {mappedFields.map((field) => (
-                      <div 
-                        className="mapped-item" 
+                      <div
+                        className="mapped-item"
                         key={field}
                         onClick={() => handleFieldClick(field)}
                         style={{
@@ -514,12 +684,14 @@ export default function ApiConnect() {
                         }}
                       >
                         {field}
-                        <div style={{ 
-                          fontSize: "0.65rem", 
-                          color: "#888", 
-                          marginTop: "0.25rem",
-                          fontStyle: "italic"
-                        }}>
+                        <div
+                          style={{
+                            fontSize: "0.65rem",
+                            color: "#888",
+                            marginTop: "0.25rem",
+                            fontStyle: "italic",
+                          }}
+                        >
                           Click to view values →
                         </div>
                       </div>
@@ -530,7 +702,14 @@ export default function ApiConnect() {
             </div>
 
             <div className="panel">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "0.5rem",
+                }}
+              >
                 <div className="help">API Response</div>
                 <div className="help">Click keys to map</div>
               </div>
@@ -541,14 +720,18 @@ export default function ApiConnect() {
                     <JsonTree data={data} onSelect={handleSelectField} />
                   </div>
                 ) : (
-                  <div className="help">No response yet — test an API to see output.</div>
+                  <div className="help">
+                    No response yet - test an API to see output.
+                  </div>
                 )}
               </div>
 
               <div style={{ marginTop: "0.5rem" }}>
-                <div className="help" style={{ marginBottom: "0.5rem" }}>Trends</div>
+                <div className="help" style={{ marginBottom: "0.5rem" }}>
+                  Trends
+                </div>
                 <div className="trend-inputs">
-                  <select 
+                  <select
                     className="select"
                     value={selectedField}
                     onChange={(e) => setSelectedField(e.target.value)}
@@ -560,19 +743,21 @@ export default function ApiConnect() {
                       </option>
                     ))}
                   </select>
-                  <select 
+                  <select
                     className="select"
                     value={selectedField2}
                     onChange={(e) => setSelectedField2(e.target.value)}
                   >
                     <option value="">Compare (optional)</option>
-                    {allMappedFields.filter((field) => field !== selectedField).map((field) => (
-                      <option key={field} value={field}>
-                        {field}
-                      </option>
-                    ))}
+                    {allMappedFields
+                      .filter((field) => field !== selectedField)
+                      .map((field) => (
+                        <option key={field} value={field}>
+                          {field}
+                        </option>
+                      ))}
                   </select>
-                  <select 
+                  <select
                     className="select"
                     value={chartType}
                     onChange={(e) => setChartType(e.target.value)}
@@ -581,11 +766,13 @@ export default function ApiConnect() {
                     <option value="line">Line</option>
                     <option value="scatter">Scatter</option>
                   </select>
-                  <button className="btn btn-primary" onClick={handlePlotGraph}>Plot</button>
+                  <button className="btn btn-primary" onClick={handlePlotGraph}>
+                    Plot
+                  </button>
                 </div>
                 <div className="trend-graph-container">
-                  <TrendGraph 
-                    data={graphData} 
+                  <TrendGraph
+                    data={graphData}
                     field={selectedField}
                     field2={selectedField2}
                     chartType={chartType}
@@ -597,15 +784,24 @@ export default function ApiConnect() {
         </div>
       </div>
 
-      {/* Field Values Modal */}
+      {/* Modals */}
       {modalField && modalData && (
-        <FieldValuesModal 
-          field={modalField} 
+        <FieldValuesModal
+          field={modalField}
           data={modalData}
           onClose={() => {
             setModalField(null);
             setModalData(null);
           }}
+        />
+      )}
+
+      {showModal && (
+        <AutomationModal
+          onClose={() => setShowModal(false)}
+          onConfirm={handleConfirmInterval}
+          onStop={handleStopAutomation}
+          existingJob={currentApiJob}
         />
       )}
     </div>
