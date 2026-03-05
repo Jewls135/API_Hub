@@ -9,6 +9,7 @@ export default function Login() {
   const login = async () => {
     const provider = new GoogleAuthProvider();
     try {
+      console.log("Attempting to sign in...");
       await signInWithPopup(auth, provider);
     } catch (err) {
       console.error(err);
@@ -17,6 +18,7 @@ export default function Login() {
 
   const logout = async () => {
     try {
+      console.log("Attempting to sign out...");
       await signOut(auth);
     } catch (err) {
       console.error(err);
