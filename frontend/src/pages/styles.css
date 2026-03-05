@@ -25,15 +25,13 @@ body,
     transparent 1px,
     transparent 12px
   );
-  /* ensure it stretches full viewport width */
   box-sizing: border-box;
 }
 
 /* Reusable console layout */
 .container {
-  /* span full width and height inside its parent and center its contents */
   width: 100%;
-  max-width: 1200px; /* optional limit for readability */
+  max-width: 1200px; 
   height: 100%;
   margin: 0 auto;
   padding: 0.5rem;
@@ -53,7 +51,7 @@ body,
   height: 100%;
   display: flex;
   flex-direction: column;
-  margin: 2rem 0; /* add breathing room top/bottom */
+  margin: 2rem 0;
   max-height: calc(100% - 4rem);
 }
 
@@ -70,7 +68,7 @@ body,
   font-family: "Segoe UI", Roboto, monospace;
   font-weight: 600;
   letter-spacing: 0.6px;
-  color: #d4af37; /* gold accent */
+  color: #d4af37;
 }
 
 .console-body {
@@ -104,6 +102,7 @@ body,
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  margin-bottom: .75rem;
 }
 
 .section-title {
@@ -121,12 +120,81 @@ body,
   margin-bottom: 0.625rem;
 }
 
+.running-jobs-panel {
+  border: 0.065rem solid #222;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.running-job-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: 0.75rem;
+  align-items: center;
+  font-size: 0.82rem;
+  padding: 0.35rem 0;
+  border-top: 0.065rem solid #1b1b1b;
+}
+
+.running-job-name {
+  color: #ddd;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.running-job-status {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.running-job-status.running {
+  color: #a8d5a8;
+}
+
+.running-job-status.stopped {
+  color: #9a9a9a;
+}
+
+.running-job-last-run {
+  color: #b5b5b5;
+  white-space: nowrap;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .running-job-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name status"
+      "last last";
+    row-gap: 0.2rem;
+  }
+
+  .running-job-name {
+    grid-area: name;
+  }
+
+  .running-job-status {
+    grid-area: status;
+    justify-self: end;
+  }
+
+  .running-job-last-run {
+    grid-area: last;
+    text-align: left;
+    white-space: normal;
+  }
+}
+
 /* ensure inputs/selects align uniformly */
 .form-row .input,
 .form-row .select {
   height: 2rem;
   box-sizing: border-box;
-  min-width: 0; /* allow flex items to shrink below content size */
+  min-width: 0; 
 }
 
 /* login page styles */
@@ -141,7 +209,6 @@ body,
   background-color: #121212;
   color: #e0e0e0;
   font-family: Arial, Helvetica, sans-serif;
-  /* subtle diagonal stripes like full-page */
   background-image: repeating-linear-gradient(
     45deg,
     rgba(212, 175, 55, 0.08) 0,
@@ -238,7 +305,7 @@ body,
 
 .toolbar {
   display: flex;
-  flex-direction: column; /* stack buttons vertically */
+  flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
@@ -309,7 +376,7 @@ body,
 
 /* teal/info */
 .btn-info {
-  background: linear-gradient(180deg, #7b4397, #dc2430); /* purple gradient */
+  background: linear-gradient(180deg, #7b4397, #dc2430);
   border: none;
   color: white;
   font-weight: 600;
@@ -403,7 +470,7 @@ body,
 
 .mapped-item {
   background: #0f0f10;
-  border: 0.065rem solid #222;
+  border: 0.065rem solid #222; 
   padding: 0.375rem 0.5rem;
   border-radius: 0.25rem;
   font-family: monospace;
@@ -532,7 +599,7 @@ textarea::placeholder {
   box-shadow: inset 0 0 0.4rem rgba(10, 200, 10, 0.4);
 }
 
-/* Improved Trend Inputs */
+/* Trend Inputs */
 .trend-inputs {
   display: flex;
   gap: 0.5rem;
