@@ -3,6 +3,7 @@ import cors from "cors";
 
 import connectDB from "./src/config/db.js";
 import apiRoutes from "./src/routes/apiRoutes.js";
+import JobWorker from "./src/services/JobWorker.js";
 
 const app = express();
 connectDB(); // Initializing db on server start
