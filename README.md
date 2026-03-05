@@ -43,4 +43,5 @@ Example Use Cases:
 
 ### Deployment (Planned)
 - Vercel (Frontend)
-- Render (Backend)
+- ~~Render (Backend)~~
+- Railway (Backend)
