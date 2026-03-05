@@ -23,7 +23,7 @@ Example Use Cases:
 
 -------------------------------------------------------------
 
-## Tech Stack Utilized
+## Tech Stack Checklist
 
 ### Frontend - Implemented
 - React
@@ -41,7 +41,7 @@ Example Use Cases:
 ### Authentication - Implemented
 - Firebase Authentication 
 
-### Deployment (Planned)
+### Deployment (Implemented)
 - Vercel (Frontend)
 - ~~Render (Backend)~~
 - Railway (Backend)
