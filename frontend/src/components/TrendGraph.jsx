@@ -31,7 +31,9 @@ export default function TrendGraph({
     );
   }
 
-  // Prepare chart data
+  /**
+   * Transform persisted API data into chart-friendly records.
+   */
   const chartData = prepareChartData(data, field, field2);
 
   if (!chartData || chartData.length === 0) {
@@ -49,11 +51,11 @@ export default function TrendGraph({
     );
   }
 
-  // Determine field types
+  // Determine data types inferred by prepareChartData.
   const fieldType = chartData[0]?.fieldType;
   const field2Type = chartData[0]?.field2Type;
 
-  // For string fields, only show bar chart
+  // String values render as occurrence counts.
   if (fieldType === "string") {
     console.log("Rendering string field bar chart");
     return (
@@ -89,7 +91,7 @@ export default function TrendGraph({
     );
   }
 
-  // For numeric fields, support all chart types
+  // Numeric values support line, bar, and scatter charts.
   console.log("Rendering numeric field chart, type:", chartType);
   return (
     <div
@@ -197,7 +199,9 @@ export default function TrendGraph({
 }
 
 function prepareChartData(data, field, field2) {
-  // Dynamic time formatting for graph
+  /**
+   * Format x-axis timestamps according to overall time span.
+   */
   const timestamps = data
     .map((p) => new Date(p.timestamp))
     .filter((d) => !isNaN(d));
@@ -244,11 +248,11 @@ function prepareChartData(data, field, field2) {
   console.log("prepareChartData - field:", field);
   console.log("prepareChartData - field2:", field2);
 
-  // Determine the data type for each field
+  // Infer data types for selected fields.
   let fieldType = null;
   let field2Type = null;
 
-  // Analyze first value to determine type
+  // Use the first matching value to infer the primary field type.
   for (let point of data) {
     console.log("Checking point:", point);
     if (
@@ -281,7 +285,7 @@ function prepareChartData(data, field, field2) {
     }
   }
 
-  // If string field, count occurrences
+  // Convert string values to frequency buckets.
   if (fieldType === "string") {
     console.log("String field detected, counting occurrences");
     const counts = {};
@@ -301,7 +305,7 @@ function prepareChartData(data, field, field2) {
     }));
   }
 
-  // For numeric fields
+  // Build time-series records for numeric values.
   console.log("Numeric field detected, preparing data");
   const result = data
     .map((point, idx) => {
@@ -312,7 +316,7 @@ function prepareChartData(data, field, field2) {
         field2Type: field2Type,
       };
 
-      // Extract field value
+      // Extract the primary field value.
       if (
         point.mappedFieldValues &&
         point.mappedFieldValues[field] !== undefined
@@ -321,7 +325,7 @@ function prepareChartData(data, field, field2) {
         obj[field] = typeof val === "number" ? val : Number(val);
       }
 
-      // Extract field2 value if provided
+      // Extract secondary field value when requested.
       if (
         field2 &&
         point.mappedFieldValues &&

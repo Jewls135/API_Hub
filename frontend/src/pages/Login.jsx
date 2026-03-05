@@ -4,7 +4,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import "./styles.css";
 
 export default function Login() {
-  const [user, loading, error] = useAuthState(auth); // hook automatically listens to auth state
+  const [user, loading, error] = useAuthState(auth);
 
   const login = async () => {
     const provider = new GoogleAuthProvider();
@@ -54,7 +54,11 @@ export default function Login() {
                 style={{ borderRadius: "50%", marginTop: "0.75rem" }}
               />
             )}
-            <button className="btn btn-danger" style={{ marginTop: "1rem", width: "100%" }} onClick={logout}>
+            <button
+              className="btn btn-danger"
+              style={{ marginTop: "1rem", width: "100%" }}
+              onClick={logout}
+            >
               Sign Out
             </button>
           </div>

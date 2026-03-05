@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
-import "../pages/styles.css";
+import "./Modal.css";
 
 export default function FieldValuesModal({ field, data, onClose }) {
   const [values, setValues] = useState([]);
 
+  /**
+   * Extracts displayable values for the selected mapped field.
+   */
   useEffect(() => {
     if (data && field) {
-      // Extract values with their source data point info
+      // Keep source metadata so users can trace each extracted value.
       const extractedValues = [];
 
       console.log("Modal data:", data);
@@ -96,7 +99,7 @@ export default function FieldValuesModal({ field, data, onClose }) {
           )}
         </div>
 
-        {/* Footer TODO: ADD TIMESTAMPS ON DATA POINTS AS WELL*/} 
+        {/* Footer */}
         <div className="modal-footer">
           <button onClick={onClose} className="modal-btn modal-btn-close">
             Close
